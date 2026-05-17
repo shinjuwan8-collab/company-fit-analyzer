@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: iat-matching-tool
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false          # Renderダッシュボードで手動設定する
+      - key: ALLOWED_ORIGINS
+        value: "*"
+    autoDeploy: true         # GitHubへのpushで自動デプロイ

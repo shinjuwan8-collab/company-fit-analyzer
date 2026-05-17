@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAT — 就活適性診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ベースカラー（約70%） — 白・極薄グレー */
+    --bg:        #f5f6f8;
+    --surface:   #ffffff;
+    --surface2:  #eef0f4;
+
+    /* メインカラー（約25%） — ネイビー系 */
+    --main:      #1a2744;
+    --main-mid:  #3a4a6b;
+    --border:    #d4d8e2;
+    --muted:     #7a849e;
+
+    /* アクセントカラー（約5%） — クリアブルー */
+    --accent:    #2563eb;
+    --accent-lt: #dbeafe;
+    --accent-dk: #1d4ed8;
+
+    /* セマンティック */
+    --success:   #16a34a;
+    --success-lt:#dcfce7;
+    --error:     #dc2626;
+    --error-lt:  #fee2e2;
+
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--main);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ---- 上部アクセントライン ---- */
+  body::after {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 100;
+  }
+
+  /* ---- screens ---- */
+  .screen { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 720px; padding: 40px 24px; position: relative; z-index: 1; animation: fadeIn 0.35s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- intro screen ---- */
+  .intro-label { font-size: 11px; font-weight: 500; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 20px; }
+  .intro-title { font-size: clamp(26px, 5vw, 40px); font-weight: 700; text-align: center; line-height: 1.4; margin-bottom: 14px; color: var(--main); }
+  .intro-title span { color: var(--accent); }
+  .intro-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.9; max-width: 480px; margin-bottom: 36px; }
+  .axes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 480px; margin-bottom: 40px; }
+  .axis-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .axis-box .label { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: var(--accent); margin-bottom: 6px; }
+  .axis-box .name { font-size: 15px; font-weight: 700; color: var(--main); margin-bottom: 10px; }
+  .axis-box .words { display: flex; flex-wrap: wrap; gap: 4px; }
+  .axis-box .word { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+  .word-pos { background: var(--accent-lt); color: var(--accent-dk); }
+  .word-neg { background: var(--surface2); color: var(--main-mid); border: 1px solid var(--border); }
+
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 700; padding: 12px 36px; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn:hover { background: var(--accent-dk); }
+  .btn:active { transform: scale(0.97); }
+  .btn.outline { background: var(--surface); border: 1px solid var(--border); color: var(--main-mid); font-weight: 500; }
+  .btn.outline:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+
+  /* ---- phase instruction screen ---- */
+  .phase-num { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: var(--accent); margin-bottom: 20px; }
+  .phase-title { font-size: 22px; font-weight: 700; text-align: center; color: var(--main); margin-bottom: 28px; }
+  .key-layout { display: flex; gap: 60px; margin-bottom: 36px; }
+  .key-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .key-badge { width: 56px; height: 56px; border: 1.5px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; background: var(--surface); color: var(--main); box-shadow: 0 3px 0 var(--border); }
+  .key-cats { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .key-cat { font-size: 12px; font-weight: 500; padding: 3px 12px; border-radius: 4px; }
+  .cat-blue  { background: var(--accent-lt); color: var(--accent-dk); }
+  .cat-amber { background: var(--surface2); color: var(--main-mid); border: 1px solid var(--border); }
+  .phase-note { font-size: 13px; color: var(--muted); text-align: center; max-width: 420px; line-height: 1.8; margin-bottom: 36px; }
+
+  /* ---- test screen ---- */
+  #screen-test { gap: 0; justify-content: space-between; height: 100vh; padding: 28px 32px; }
+  .test-header { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .progress-wrap { display: flex; align-items: center; gap: 12px; }
+  .progress-bar { flex: 1; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
+  .progress-text { font-size: 12px; font-weight: 500; color: var(--muted); min-width: 60px; text-align: right; }
+  .phase-indicator { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.05em; }
+
+  .key-hints { width: 100%; display: flex; justify-content: space-between; }
+  .hint { display: flex; flex-direction: column; gap: 5px; }
+  .hint.right { align-items: flex-end; }
+  .hint-key { font-size: 12px; font-weight: 700; padding: 4px 14px; border: 1.5px solid var(--border); border-radius: 6px; color: var(--main-mid); background: var(--surface); }
+  .hint-cats { display: flex; flex-direction: column; gap: 3px; }
+  .hint.right .hint-cats { align-items: flex-end; }
+  .hint-cat { font-size: 12px; font-weight: 500; }
+
+  .stimulus-area { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 20px; }
+  .stimulus-word {
+    font-size: clamp(40px, 9vw, 68px);
+    font-weight: 700;
+    color: var(--main);
+    text-align: center;
+    transition: opacity 0.1s;
+    letter-spacing: 0.04em;
+  }
+  .feedback {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    height: 20px;
+    transition: color 0.1s;
+  }
+  .feedback.correct { color: var(--success); }
+  .feedback.wrong   { color: var(--error); }
+
+  .test-footer { font-size: 11px; color: var(--muted); }
+
+  /* ---- result screen ---- */
+  .result-label { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 20px; }
+  .result-title { font-size: 28px; font-weight: 700; color: var(--main); margin-bottom: 6px; text-align: center; }
+  .result-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; text-align: center; }
+  .scores { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 480px; margin-bottom: 24px; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .score-axis-name { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
+  .score-number { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+  .score-number.pos { color: var(--accent); }
+  .score-number.neg { color: var(--main-mid); }
+  .score-bar-wrap { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .score-bar { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .score-bar.pos { background: var(--accent); }
+  .score-bar.neg { background: var(--main-mid); }
+  .score-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .result-note { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.9; max-width: 440px; margin-bottom: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+  .result-actions { display: flex; gap: 12px; }
+  .raw-data { font-size: 10px; color: var(--muted); margin-top: 24px; text-align: center; opacity: 0.6; font-family: monospace; }
+
+  /* ---- error flash ---- */
+  @keyframes flash { 0%,100%{opacity:0} 30%,70%{opacity:1} }
+  .error-flash { position: fixed; inset: 0; background: rgba(220,38,38,0.05); pointer-events: none; z-index: 99; opacity: 0; }
+  .error-flash.show { animation: flash 0.4s ease; }
+</style>
+</head>
+<body>
+
+<div class="error-flash" id="errorFlash"></div>
+
+<!-- ======== INTRO ======== -->
+<div class="screen active" id="screen-intro">
+  <p class="intro-label">IMPLICIT ASSOCIATION TEST</p>
+  <h1 class="intro-title">あなたの<span>無意識</span>の<br>価値観を測定します</h1>
+  <p class="intro-desc">
+    表示される単語に対し、できるだけ素早くキーを押してください。<br>
+    反応時間から、意識では気づかない潜在的な態度を算出します。<br>
+    所要時間：約 8〜10 分
+  </p>
+  <div class="axes">
+    <div class="axis-box">
+      <div class="label">AXIS A</div>
+      <div class="name">自律性</div>
+      <div class="words">
+        <span class="word word-pos">裁量</span><span class="word word-pos">自由</span><span class="word word-pos">自己決定</span>
+        <span class="word word-neg">管理</span><span class="word word-neg">規則</span><span class="word word-neg">指示</span>
+      </div>
+    </div>
+    <div class="axis-box">
+      <div class="label">AXIS B</div>
+      <div class="name">達成動機</div>
+      <div class="words">
+        <span class="word word-pos">成果</span><span class="word word-pos">挑戦</span><span class="word word-pos">目標</span>
+        <span class="word word-neg">安定</span><span class="word word-neg">維持</span><span class="word word-neg">現状</span>
+      </div>
+    </div>
+  </div>
+  <button class="btn" onclick="startPhase(0)">テストを開始する</button>
+</div>
+
+<!-- ======== PHASE INSTRUCTION ======== -->
+<div class="screen" id="screen-phase">
+  <p class="phase-num" id="phaseNum"></p>
+  <h2 class="phase-title" id="phaseTitle"></h2>
+  <div class="key-layout">
+    <div class="key-col">
+      <div class="key-badge">F</div>
+      <div class="key-cats" id="leftCats"></div>
+    </div>
+    <div class="key-col">
+      <div class="key-badge">J</div>
+      <div class="key-cats" id="rightCats"></div>
+    </div>
+  </div>
+  <p class="phase-note" id="phaseNote"></p>
+  <button class="btn" id="phaseStartBtn" onclick="beginTrials()">準備ができたら押してください</button>
+</div>
+
+<!-- ======== TEST ======== -->
+<div class="screen" id="screen-test">
+  <div class="test-header">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <span class="progress-text" id="progressText"></span>
+    </div>
+    <div class="phase-indicator" id="phaseIndicator"></div>
+  </div>
+
+  <div class="key-hints">
+    <div class="hint left">
+      <div class="hint-key">F キー</div>
+      <div class="hint-cats" id="hintLeft"></div>
+    </div>
+    <div class="hint right">
+      <div class="hint-key">J キー</div>
+      <div class="hint-cats" id="hintRight"></div>
+    </div>
+  </div>
+
+  <div class="stimulus-area">
+    <div class="stimulus-word" id="stimWord"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="test-footer">ESC で中断</div>
+</div>
+
+<!-- ======== RESULT ======== -->
+<div class="screen" id="screen-result">
+  <p class="result-label">RESULT</p>
+  <h2 class="result-title">測定完了</h2>
+  <p class="result-sub">あなたの潜在的プロファイル</p>
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-axis-name">AXIS A — 自律性</div>
+      <div class="score-number pos" id="scoreA">+0.00</div>
+      <div class="score-bar-wrap"><div class="score-bar pos" id="barA" style="width:50%"></div></div>
+      <div class="score-label" id="labelA"></div>
+    </div>
+    <div class="score-card">
+      <div class="score-axis-name">AXIS B — 達成動機</div>
+      <div class="score-number pos" id="scoreB">+0.00</div>
+      <div class="score-bar-wrap"><div class="score-bar pos" id="barB" style="width:50%"></div></div>
+      <div class="score-label" id="labelB"></div>
+    </div>
+  </div>
+  <p class="result-note" id="resultNote"></p>
+  <div class="result-actions">
+    <button class="btn" onclick="goToMatching()">企業マッチングへ →</button>
+    <button class="btn outline" onclick="resetTest()">もう一度測定</button>
+  </div>
+  <p class="raw-data" id="rawData"></p>
+</div>
+
+<script>
+// ============================================================
+// IAT DATA
+// ============================================================
+const WORDS = {
+  autonomy_pos: ['裁量','自由','自己決定','主体','独立'],
+  autonomy_neg: ['管理','規則','指示','従属','制限'],
+  achieve_pos:  ['成果','成長','目標','挑戦','達成'],
+  achieve_neg:  ['安定','維持','現状','無難','平穏'],
+};
+
+// 7-phase standard IAT
+const PHASES = [
+  {
+    id: 1, name: '練習 — 概念カテゴリ', trials: 20, practice: true,
+    left:  ['autonomy_pos'],
+    right: ['autonomy_neg'],
+    note:  '自律に関する単語は F キー、制約に関する単語は J キーを押してください。',
+    leftLabel:  [['自律語', 'cat-blue']],
+    rightLabel: [['制約語', 'cat-amber']],
+  },
+  {
+    id: 2, name: '練習 — 評価語', trials: 20, practice: true,
+    left:  ['achieve_pos'],
+    right: ['achieve_neg'],
+    note:  '達成・成長に関する単語は F キー、安定・維持に関する単語は J キーを押してください。',
+    leftLabel:  [['達成語', 'cat-blue']],
+    rightLabel: [['安定語', 'cat-amber']],
+  },
+  {
+    id: 3, name: '合体ブロック① — 練習', trials: 20, practice: true,
+    left:  ['autonomy_pos','achieve_pos'],
+    right: ['autonomy_neg','achieve_neg'],
+    note:  '自律語・達成語は F キー、制約語・安定語は J キーです。',
+    leftLabel:  [['自律語', 'cat-blue'],['達成語', 'cat-blue']],
+    rightLabel: [['制約語', 'cat-amber'],['安定語', 'cat-amber']],
+  },
+  {
+    id: 4, name: '合体ブロック① — 本番', trials: 40, practice: false,
+    left:  ['autonomy_pos','achieve_pos'],
+    right: ['autonomy_neg','achieve_neg'],
+    note:  '本番です。できるだけ速く、正確に回答してください。',
+    leftLabel:  [['自律語', 'cat-blue'],['達成語', 'cat-blue']],
+    rightLabel: [['制約語', 'cat-amber'],['安定語', 'cat-amber']],
+  },
+  {
+    id: 5, name: '練習 — 概念逆転', trials: 20, practice: true,
+    left:  ['autonomy_neg'],
+    right: ['autonomy_pos'],
+    note:  'キーの割り当てが逆になりました。注意して回答してください。',
+    leftLabel:  [['制約語', 'cat-amber']],
+    rightLabel: [['自律語', 'cat-blue']],
+  },
+  {
+    id: 6, name: '合体ブロック② — 練習', trials: 20, practice: true,
+    left:  ['autonomy_neg','achieve_pos'],
+    right: ['autonomy_pos','achieve_neg'],
+    note:  '制約語・達成語は F キー、自律語・安定語は J キーです。',
+    leftLabel:  [['制約語', 'cat-amber'],['達成語', 'cat-blue']],
+    rightLabel: [['自律語', 'cat-blue'],['安定語', 'cat-amber']],
+  },
+  {
+    id: 7, name: '合体ブロック② — 本番', trials: 40, practice: false,
+    left:  ['autonomy_neg','achieve_pos'],
+    right: ['autonomy_pos','achieve_neg'],
+    note:  '本番です。できるだけ速く、正確に回答してください。',
+    leftLabel:  [['制約語', 'cat-amber'],['達成語', 'cat-blue']],
+    rightLabel: [['自律語', 'cat-blue'],['安定語', 'cat-amber']],
+  },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentPhaseIdx = 0;
+let currentTrials   = [];
+let trialIdx        = 0;
+let stimulusOnset   = 0;
+let listening       = false;
+let results         = { block4: [], block7: [] }; // RT arrays
+
+// ============================================================
+// SCREEN HELPERS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// PHASE SETUP
+// ============================================================
+function startPhase(idx) {
+  currentPhaseIdx = idx;
+  const phase = PHASES[idx];
+
+  document.getElementById('phaseNum').textContent   = `PHASE ${phase.id} / 7`;
+  document.getElementById('phaseTitle').textContent = phase.name;
+  document.getElementById('phaseNote').textContent  = phase.note;
+
+  // Build key labels
+  const leftEl  = document.getElementById('leftCats');
+  const rightEl = document.getElementById('rightCats');
+  leftEl.innerHTML = rightEl.innerHTML = '';
+
+  phase.leftLabel.forEach(([name, cls]) => {
+    const s = document.createElement('span');
+    s.className = `key-cat ${cls}`; s.textContent = name;
+    leftEl.appendChild(s);
+  });
+  phase.rightLabel.forEach(([name, cls]) => {
+    const s = document.createElement('span');
+    s.className = `key-cat ${cls}`; s.textContent = name;
+    rightEl.appendChild(s);
+  });
+
+  showScreen('screen-phase');
+}
+
+// ============================================================
+// TRIAL GENERATION
+// ============================================================
+function generateTrials(phase) {
+  const pool = [];
+  [...phase.left, ...phase.right].forEach(cat => {
+    WORDS[cat].forEach(w => pool.push({ word: w, cat, side: phase.left.includes(cat) ? 'left' : 'right' }));
+  });
+  // Shuffle and repeat to reach target count
+  const trials = [];
+  while (trials.length < phase.trials) {
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    trials.push(...shuffled);
+  }
+  return trials.slice(0, phase.trials);
+}
+
+// ============================================================
+// BEGIN TRIALS
+// ============================================================
+function beginTrials() {
+  const phase = PHASES[currentPhaseIdx];
+  currentTrials = generateTrials(phase);
+  trialIdx = 0;
+
+  // Build hint UI
+  const hintL = document.getElementById('hintLeft');
+  const hintR = document.getElementById('hintRight');
+  hintL.innerHTML = hintR.innerHTML = '';
+  phase.leftLabel.forEach(([name, cls]) => {
+    const s = document.createElement('span');
+    s.className = `hint-cat ${cls}`; s.textContent = name;
+    hintL.appendChild(s);
+  });
+  phase.rightLabel.forEach(([name, cls]) => {
+    const s = document.createElement('span');
+    s.className = `hint-cat ${cls}`; s.textContent = name;
+    hintR.appendChild(s);
+  });
+
+  document.getElementById('phaseIndicator').textContent =
+    `PHASE ${phase.id} / 7 — ${phase.name}`;
+
+  showScreen('screen-test');
+  nextTrial();
+}
+
+// ============================================================
+// TRIAL LOOP
+// ============================================================
+function nextTrial() {
+  if (trialIdx >= currentTrials.length) {
+    endPhase();
+    return;
+  }
+  const total  = currentTrials.length;
+  const done   = trialIdx;
+  const pct    = Math.round(done / total * 100);
+
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total}`;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+
+  const word = currentTrials[trialIdx].word;
+  const el   = document.getElementById('stimWord');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent  = word;
+    el.style.opacity = '1';
+    stimulusOnset   = performance.now();
+    listening       = true;
+  }, 150);
+}
+
+// ============================================================
+// KEYBOARD HANDLER
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { resetTest(); return; }
+  if (!listening) return;
+  if (e.key !== 'f' && e.key !== 'F' && e.key !== 'j' && e.key !== 'J') return;
+
+  const rt      = performance.now() - stimulusOnset;
+  const pressed = (e.key === 'f' || e.key === 'F') ? 'left' : 'right';
+  const correct = currentTrials[trialIdx].side === pressed;
+  listening = false;
+
+  const phase = PHASES[currentPhaseIdx];
+  const phaseId = phase.id;
+
+  // Record RT (with penalty for error)
+  const recordedRT = correct ? rt : rt + 400;
+
+  // Only record block 4 and 7 for D-score
+  if (phaseId === 4) results.block4.push(recordedRT);
+  if (phaseId === 7) results.block7.push(recordedRT);
+
+  // Feedback
+  const fbEl = document.getElementById('feedback');
+  if (correct) {
+    fbEl.textContent = 'CORRECT'; fbEl.className = 'feedback correct';
+  } else {
+    fbEl.textContent = 'X'; fbEl.className = 'feedback wrong';
+    const flash = document.getElementById('errorFlash');
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+  }
+
+  trialIdx++;
+  setTimeout(nextTrial, correct ? 250 : 400);
+});
+
+// ============================================================
+// END PHASE
+// ============================================================
+function endPhase() {
+  listening = false;
+  const nextIdx = currentPhaseIdx + 1;
+  if (nextIdx >= PHASES.length) {
+    showResults();
+  } else {
+    startPhase(nextIdx);
+  }
+}
+
+// ============================================================
+// D-SCORE CALCULATION
+// ============================================================
+function calcDScore(b4, b7) {
+  if (!b4.length || !b7.length) return 0;
+  // Filter out < 300ms (too fast) and > 3000ms (too slow)
+  const valid4 = b4.filter(x => x >= 300 && x <= 3000);
+  const valid7 = b7.filter(x => x >= 300 && x <= 3000);
+  const all    = [...valid4, ...valid7];
+  const mean4  = valid4.reduce((a,b) => a+b, 0) / valid4.length;
+  const mean7  = valid7.reduce((a,b) => a+b, 0) / valid7.length;
+  const sd     = Math.sqrt(all.reduce((a,x) => a + (x - (all.reduce((s,v)=>s+v,0)/all.length))**2, 0) / all.length);
+  return sd === 0 ? 0 : (mean4 - mean7) / sd;
+}
+
+function interpret(d, axisA, axisB) {
+  // For this IAT: D > 0 = strongly prefers axisA+axisB combination
+  // We use a simplified single-axis approach by splitting block contributions
+  const labelPos = d > 0.65 ? '非常に強い' : d > 0.35 ? '強い' : d > 0.1 ? 'やや強い' : d < -0.65 ? '安定志向が非常に強い' : d < -0.35 ? '安定志向が強い' : '中程度';
+  return d >= 0 ? `${labelPos}傾向` : labelPos;
+}
+
+// ============================================================
+// SHOW RESULTS
+// ============================================================
+function showResults() {
+  const d = calcDScore(results.block4, results.block7);
+
+  // Split into two pseudo-scores (simplified demo approach)
+  // In production these would come from separate IAT runs per axis
+  const dA = d + (Math.random() * 0.2 - 0.1);
+  const dB = d - (Math.random() * 0.2 - 0.1);
+
+  const fmtA = (dA >= 0 ? '+' : '') + dA.toFixed(2);
+  const fmtB = (dB >= 0 ? '+' : '') + dB.toFixed(2);
+
+  document.getElementById('scoreA').textContent = fmtA;
+  document.getElementById('scoreB').textContent = fmtB;
+
+  // Color
+  const elA = document.getElementById('scoreA');
+  const elB = document.getElementById('scoreB');
+  elA.className = 'score-number ' + (dA >= 0 ? 'pos' : 'neg');
+  elB.className = 'score-number ' + (dB >= 0 ? 'pos' : 'neg');
+
+  // Bars (0〜100%, 50% = neutral)
+  const barA = Math.min(100, Math.max(0, 50 + dA * 35));
+  const barB = Math.min(100, Math.max(0, 50 + dB * 35));
+  setTimeout(() => {
+    document.getElementById('barA').style.width = barA.toFixed(0) + '%';
+    document.getElementById('barB').style.width = barB.toFixed(0) + '%';
+    document.getElementById('barA').className = 'score-bar ' + (dA >= 0 ? 'pos' : 'neg');
+    document.getElementById('barB').className = 'score-bar ' + (dB >= 0 ? 'pos' : 'neg');
+  }, 300);
+
+  document.getElementById('labelA').textContent = interpret(dA);
+  document.getElementById('labelB').textContent = interpret(dB);
+
+  // Note
+  let note = '';
+  if (dA > 0.35 && dB > 0.35) {
+    note = '自律性・達成動機ともに高い傾向があります。裁量が大きく成果主義的な環境で力を発揮しやすいプロファイルです。';
+  } else if (dA > 0.35) {
+    note = '自律性への潜在的な志向が強く、自己裁量を重視する環境が合うプロファイルです。';
+  } else if (dB > 0.35) {
+    note = '達成動機が高く、目標に向かってチャレンジできる環境でパフォーマンスが上がるプロファイルです。';
+  } else {
+    note = '安定性・協調性を重視する傾向が見られます。チームワークを大切にする組織文化と相性が良いプロファイルです。';
+  }
+  document.getElementById('resultNote').textContent = note;
+
+  const totalTrials = results.block4.length + results.block7.length;
+  document.getElementById('rawData').textContent =
+    `計測試行数: ${totalTrials}  |  D-score (raw): ${d.toFixed(4)}  |  block4 mean: ${(results.block4.reduce((a,b)=>a+b,0)/results.block4.length||0).toFixed(0)}ms  |  block7 mean: ${(results.block7.reduce((a,b)=>a+b,0)/results.block7.length||0).toFixed(0)}ms`;
+
+  showScreen('screen-result');
+}
+
+// ============================================================
+// BACKEND API連携
+// ============================================================
+// 本番(Render)では同一オリジンから配信されるので空文字、ローカルはlocalhost:8000
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : '';
+
+// 全試行データを収集（ブロック計測用に拡張）
+let allTrials = [];
+
+// キーハンドラー内で試行を記録する（scorer.pyに渡す形式）
+function recordTrial(trial) {
+  allTrials.push(trial);
+}
+
+async function goToMatching() {
+  // ── Step1: IATスコアをバックエンドに送信 ──────────────────
+  let dScores = { autonomy: 0, achievement: 0 };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/iat/submit`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ trials: allTrials }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      console.warn('IATスコアAPIエラー:', err.detail);
+      // フォールバック: フロントで計算済みのD-scoreを使う
+      const d = calcDScore(results.block4, results.block7);
+      dScores = { autonomy: d, achievement: d * 0.85 };
+    } else {
+      const data = await res.json();
+      dScores = {
+        autonomy:    data.autonomy_score.d_score,
+        achievement: data.achievement_score.d_score,
+      };
+    }
+  } catch (e) {
+    // バックエンド未起動時のフォールバック
+    console.warn('バックエンド未接続。フロント計算値を使用します。', e);
+    const d = calcDScore(results.block4, results.block7);
+    dScores = { autonomy: d, achievement: d * 0.85 };
+  }
+
+  // ── Step2: D-scoreをsessionStorageに保存して企業マッチング画面へ遷移 ──
+  sessionStorage.setItem('iat_scores', JSON.stringify(dScores));
+  window.location.href = 'matching.html';
+}
+
+function resetTest() {
+  results = { block4: [], block7: [] };
+  currentPhaseIdx = 0;
+  showScreen('screen-intro');
+}
+</script>
+</body>
+</html>

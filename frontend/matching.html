@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業マッチング — 就活適性診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f5f6f8;
+    --surface:   #ffffff;
+    --surface2:  #eef0f4;
+    --main:      #1a2744;
+    --main-mid:  #3a4a6b;
+    --border:    #d4d8e2;
+    --muted:     #7a849e;
+    --accent:    #2563eb;
+    --accent-lt: #dbeafe;
+    --accent-dk: #1d4ed8;
+    --gold:      #d97706;
+    --gold-lt:   #fef3c7;
+    --silver:    #6b7280;
+    --silver-lt: #f3f4f6;
+    --bronze:    #b45309;
+    --bronze-lt: #fef9ee;
+    --success:   #16a34a;
+    --success-lt:#dcfce7;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--main);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* 上部アクセントライン */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--accent); z-index: 100;
+  }
+
+  /* ── ナビゲーションバー ── */
+  .navbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-size: 14px; font-weight: 700; color: var(--main);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .nav-back {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    text-decoration: none; display: flex; align-items: center; gap: 4px;
+    transition: color 0.15s;
+  }
+  .nav-back:hover { color: var(--accent); }
+
+  /* ── レイアウト ── */
+  .page { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── プロファイルバナー ── */
+  .profile-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 32px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .profile-scores {
+    display: flex; gap: 20px; flex: 1;
+  }
+  .profile-score-item {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .profile-score-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--muted);
+  }
+  .profile-score-val {
+    font-size: 26px; font-weight: 700; color: var(--accent);
+  }
+  .profile-score-val.neg { color: var(--main-mid); }
+  .profile-divider {
+    width: 1px; background: var(--border); align-self: stretch;
+  }
+  .profile-label-area { display: flex; flex-direction: column; gap: 6px; }
+  .profile-type-badge {
+    display: inline-block;
+    background: var(--accent-lt);
+    color: var(--accent-dk);
+    font-size: 12px; font-weight: 700;
+    padding: 4px 12px; border-radius: 20px;
+  }
+  .profile-summary-text {
+    font-size: 13px; color: var(--muted); line-height: 1.7;
+    max-width: 360px;
+  }
+
+  /* ── セクションヘッダー ── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: var(--main);
+  }
+  .section-meta {
+    font-size: 12px; color: var(--muted);
+  }
+
+  /* ── 企業カード ── */
+  .rank-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .rank-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: box-shadow 0.15s, border-color 0.15s;
+    animation: cardIn 0.4s ease both;
+  }
+  .rank-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 12px rgba(37,99,235,0.08);
+  }
+  .rank-card.rank-1 { border-color: var(--gold); }
+  .rank-card.rank-2 { border-color: var(--border); }
+  .rank-card.rank-3 { border-color: var(--bronze); }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ランク番号バッジ */
+  .rank-badge {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; flex-shrink: 0;
+  }
+  .rank-badge.r1 { background: var(--gold-lt);   color: var(--gold); }
+  .rank-badge.r2 { background: var(--silver-lt); color: var(--silver); }
+  .rank-badge.r3 { background: var(--bronze-lt); color: var(--bronze); }
+  .rank-badge.rn { background: var(--surface2);  color: var(--muted); }
+
+  /* カード本文 */
+  .card-body {}
+  .card-company {
+    font-size: 17px; font-weight: 700; color: var(--main);
+    margin-bottom: 6px;
+  }
+  .card-tags {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;
+  }
+  .card-tag {
+    font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 4px;
+    background: var(--surface2); color: var(--main-mid);
+    border: 1px solid var(--border);
+  }
+  .card-reason {
+    font-size: 13px; color: var(--muted); line-height: 1.8;
+  }
+
+  /* マッチスコア */
+  .card-score-area {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+    min-width: 80px;
+  }
+  .card-percent {
+    font-size: 24px; font-weight: 700; color: var(--accent);
+  }
+  .card-percent-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .match-bar-wrap {
+    width: 64px; height: 4px;
+    background: var(--surface2); border-radius: 2px; overflow: hidden;
+  }
+  .match-bar {
+    height: 100%; border-radius: 2px;
+    background: var(--accent); transition: width 0.8s ease;
+  }
+
+  /* ── AI検索サマリー ── */
+  .search-summary {
+    background: var(--accent-lt);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .summary-icon {
+    font-size: 18px; flex-shrink: 0; margin-top: 1px;
+  }
+  .summary-text {
+    font-size: 13px; color: var(--accent-dk); line-height: 1.8;
+  }
+
+  /* ── ローディング ── */
+  .loading-screen {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 60vh; gap: 24px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-label {
+    font-size: 14px; font-weight: 500; color: var(--muted);
+  }
+  .loading-steps {
+    display: flex; flex-direction: column; gap: 8px;
+    font-size: 12px; color: var(--muted);
+  }
+  .loading-step {
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0.4; transition: opacity 0.4s;
+  }
+  .loading-step.active { opacity: 1; color: var(--accent); }
+  .loading-step.done   { opacity: 0.8; color: var(--success); }
+  .step-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+
+  /* ── エラー画面 ── */
+  .error-screen {
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 60vh; gap: 16px; text-align: center;
+  }
+  .error-icon { font-size: 40px; }
+  .error-title { font-size: 18px; font-weight: 700; color: var(--main); }
+  .error-msg { font-size: 13px; color: var(--muted); max-width: 400px; line-height: 1.7; }
+  .error-detail {
+    font-size: 12px; color: var(--muted);
+    background: var(--surface2); border-radius: 8px;
+    padding: 12px 16px; max-width: 480px;
+    font-family: monospace; text-align: left; white-space: pre-wrap;
+  }
+
+  /* ── フッターアクション ── */
+  .footer-actions {
+    display: flex; gap: 12px; justify-content: center;
+    margin-top: 40px;
+  }
+  .btn {
+    font-family: var(--sans); font-size: 14px; font-weight: 700;
+    padding: 11px 32px; border-radius: 8px; cursor: pointer;
+    border: none; transition: background 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dk); }
+  .btn-outline {
+    background: var(--surface); color: var(--main-mid);
+    border: 1px solid var(--border); font-weight: 500;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* デモバナー */
+  .demo-banner {
+    background: var(--gold-lt);
+    border: 1px solid rgba(217,119,6,0.3);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px; color: var(--gold);
+    font-weight: 500; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ナビゲーションバー -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    就活IAT診断
+  </div>
+  <a href="iat.html" class="nav-back">← テストに戻る</a>
+</nav>
+
+<main class="page" id="main">
+
+  <!-- ローディング画面 -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="loading-label">AIが企業情報を調査中...</div>
+    <div class="loading-steps">
+      <div class="loading-step active" id="step1">
+        <div class="step-dot"></div>あなたのプロファイルを分析
+      </div>
+      <div class="loading-step" id="step2">
+        <div class="step-dot"></div>Web検索で企業情報を収集
+      </div>
+      <div class="loading-step" id="step3">
+        <div class="step-dot"></div>マッチ度を算出・ランキング生成
+      </div>
+    </div>
+  </div>
+
+  <!-- エラー画面 -->
+  <div class="error-screen" id="errorScreen">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">マッチング結果を取得できませんでした</div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="error-detail" id="errorDetail" style="display:none"></div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button class="btn btn-primary" onclick="loadMatching()">再試行</button>
+      <button class="btn btn-outline" onclick="loadDemo()">デモ結果を見る</button>
+    </div>
+  </div>
+
+  <!-- 結果画面（初期非表示） -->
+  <div id="resultScreen" style="display:none">
+
+    <!-- デモ表示バナー（デモ時のみ表示） -->
+    <div class="demo-banner" id="demoBanner" style="display:none">
+      ⚠️ バックエンド未接続のため、デモデータを表示しています。
+      サーバー起動後に再読み込みすると実際の結果が表示されます。
+    </div>
+
+    <!-- プロファイルバナー -->
+    <div class="profile-banner">
+      <div class="profile-scores">
+        <div class="profile-score-item">
+          <div class="profile-score-label">自律性スコア</div>
+          <div class="profile-score-val" id="dispAutoScore">+0.00</div>
+        </div>
+        <div class="profile-divider"></div>
+        <div class="profile-score-item">
+          <div class="profile-score-label">達成動機スコア</div>
+          <div class="profile-score-val" id="dispAchievScore">+0.00</div>
+        </div>
+      </div>
+      <div class="profile-label-area">
+        <span class="profile-type-badge" id="dispProfileLabel">—</span>
+        <div class="profile-summary-text" id="dispSummary"></div>
+      </div>
+    </div>
+
+    <!-- AI検索サマリー -->
+    <div class="search-summary" id="searchSummaryBox" style="display:none">
+      <div class="summary-icon">🔍</div>
+      <div class="summary-text" id="dispSearchSummary"></div>
+    </div>
+
+    <!-- ランキング -->
+    <div class="section-header">
+      <div class="section-title">企業マッチングランキング</div>
+      <div class="section-meta" id="dispTopN"></div>
+    </div>
+    <div class="rank-list" id="rankList"></div>
+
+    <!-- フッターアクション -->
+    <div class="footer-actions">
+      <button class="btn btn-outline" onclick="window.location.href='iat.html'">
+        テストをやり直す
+      </button>
+      <button class="btn btn-primary" onclick="window.print()">
+        結果を保存（印刷）
+      </button>
+    </div>
+
+  </div><!-- /resultScreen -->
+</main>
+
+<script>
+// 本番(Render)では同一オリジンから配信されるので空文字、ローカルはlocalhost:8000
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : '';
+
+// ── ローディングステップアニメーション ────────────────────────
+let stepTimer = null;
+function animateSteps() {
+  const steps = ['step1', 'step2', 'step3'];
+  let i = 0;
+  stepTimer = setInterval(() => {
+    if (i > 0) {
+      document.getElementById(steps[i - 1]).classList.remove('active');
+      document.getElementById(steps[i - 1]).classList.add('done');
+    }
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('active');
+      i++;
+    } else {
+      clearInterval(stepTimer);
+    }
+  }, 1800);
+}
+
+// ── スコア表示ヘルパー ────────────────────────────────────────
+function fmtScore(v) {
+  return (v >= 0 ? '+' : '') + v.toFixed(2);
+}
+
+// ── ランクバッジ ──────────────────────────────────────────────
+function rankBadgeClass(rank) {
+  return rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : 'rn';
+}
+
+// ── カード描画 ────────────────────────────────────────────────
+function renderCards(matches) {
+  const list = document.getElementById('rankList');
+  list.innerHTML = '';
+
+  matches.forEach((m, idx) => {
+    const delay = idx * 0.08;
+    const tags  = (m.culture_tags || []).map(t =>
+      `<span class="card-tag">${t}</span>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.className = `rank-card rank-${m.rank}`;
+    card.style.animationDelay = `${delay}s`;
+    card.innerHTML = `
+      <div class="rank-badge ${rankBadgeClass(m.rank)}">${m.rank}</div>
+      <div class="card-body">
+        <div class="card-company">${m.company_name}</div>
+        <div class="card-tags">${tags}</div>
+        <div class="card-reason">${m.reason}</div>
+      </div>
+      <div class="card-score-area">
+        <div class="card-percent" id="pct-${idx}">0%</div>
+        <div class="card-percent-label">MATCH</div>
+        <div class="match-bar-wrap">
+          <div class="match-bar" id="bar-${idx}" style="width:0%"></div>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+
+    // バーアニメーション（少し遅延させる）
+    setTimeout(() => {
+      document.getElementById(`pct-${idx}`).textContent = `${m.match_percent}%`;
+      document.getElementById(`bar-${idx}`).style.width = `${m.match_percent}%`;
+    }, 300 + idx * 80);
+  });
+}
+
+// ── 結果画面を表示 ────────────────────────────────────────────
+function showResult(data, scores, isDemo = false) {
+  clearInterval(stepTimer);
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('errorScreen').style.display   = 'none';
+  document.getElementById('resultScreen').style.display  = 'block';
+
+  // デモバナー
+  if (isDemo) document.getElementById('demoBanner').style.display = 'flex';
+
+  // プロファイルバナー
+  const autoEl = document.getElementById('dispAutoScore');
+  const achEl  = document.getElementById('dispAchievScore');
+  autoEl.textContent = fmtScore(scores.autonomy);
+  achEl.textContent  = fmtScore(scores.achievement);
+  if (scores.autonomy  < 0) autoEl.classList.add('neg');
+  if (scores.achievement < 0) achEl.classList.add('neg');
+
+  document.getElementById('dispProfileLabel').textContent = data.profile_label || '—';
+  document.getElementById('dispTopN').textContent = `上位 ${data.matches.length} 社`;
+
+  // AI検索サマリー
+  if (data.search_summary) {
+    document.getElementById('dispSearchSummary').textContent = data.search_summary;
+    document.getElementById('searchSummaryBox').style.display = 'flex';
+  }
+
+  // ランキングカード
+  renderCards(data.matches);
+}
+
+// ── エラー表示 ────────────────────────────────────────────────
+function showError(msg, detail = '') {
+  clearInterval(stepTimer);
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('errorScreen').style.display   = 'flex';
+  document.getElementById('errorMsg').textContent = msg;
+  if (detail) {
+    const detEl = document.getElementById('errorDetail');
+    detEl.textContent = detail;
+    detEl.style.display = 'block';
+  }
+}
+
+// ── デモデータ（バックエンド未接続時のフォールバック） ─────────
+function getDemoData(scores) {
+  const isHighAuto   = scores.autonomy   > 0.35;
+  const isHighAchiev = scores.achievement > 0.35;
+
+  const matches = isHighAuto && isHighAchiev ? [
+    { rank:1, company_name:'株式会社サイバーエージェント', match_score:0.93, match_percent:93,
+      reason:'「自走できる人材」を採用方針の核に掲げており、裁量が大きいプロジェクト配置が豊富。成果で評価する風土が達成動機の高さと強く一致します。',
+      culture_tags:['裁量大','成果主義','挑戦文化','若手抜擢'] },
+    { rank:2, company_name:'freee株式会社', match_score:0.87, match_percent:87,
+      reason:'スタートアップ気質を維持しながら成長フェーズにあり、OKR制度による高い目標設定が達成動機と親和性が高い。自律的な働き方を推奨する制度が整備されています。',
+      culture_tags:['OKR導入','フラット組織','成長環境'] },
+    { rank:3, company_name:'株式会社メルカリ', match_score:0.82, match_percent:82,
+      reason:'Go Boldというバリューが示す通り、高い目標設定と自律的な行動が期待される環境。裁量の大きいプロダクト開発と成果連動の評価制度があります。',
+      culture_tags:['Go Bold','裁量大','グローバル'] },
+    { rank:4, company_name:'株式会社SmartHR', match_score:0.76, match_percent:76,
+      reason:'急成長SaaS企業として高い目標へのコミットを文化として持ち、自律的な業務遂行を重視。PDCAを速く回す環境が達成動機の高い人材に合います。',
+      culture_tags:['高速PDCA','SaaS','フラット'] },
+    { rank:5, company_name:'株式会社LayerX', match_score:0.71, match_percent:71,
+      reason:'少数精鋭でDX推進に取り組む環境は、自律的に動ける人材が活きやすい。成果へのこだわりが強い組織文化と、高い自律性スコアが一致しています。',
+      culture_tags:['少数精鋭','DX','裁量大'] },
+  ] : [
+    { rank:1, company_name:'株式会社リクルート', match_score:0.85, match_percent:85,
+      reason:'多様なキャリアパスと明確な目標設定制度があり、自律的な行動を評価する文化があります。',
+      culture_tags:['多様なキャリア','目標管理','大手安定'] },
+    { rank:2, company_name:'トヨタ自動車株式会社', match_score:0.78, match_percent:78,
+      reason:'安定した経営基盤と明確な役割分担が、チームワークを重視する方針と合致します。',
+      culture_tags:['安定基盤','チームワーク','大企業'] },
+    { rank:3, company_name:'日本電信電話株式会社（NTT）', match_score:0.72, match_percent:72,
+      reason:'大規模組織での協調作業と長期的なキャリア形成を重視する文化が特徴です。',
+      culture_tags:['安定','協調','長期キャリア'] },
+    { rank:4, company_name:'富士通株式会社', match_score:0.66, match_percent:66,
+      reason:'デジタルトランスフォーメーションを進めながら、チーム単位での着実な推進を重視しています。',
+      culture_tags:['DX推進','チーム重視','安定'] },
+    { rank:5, company_name:'株式会社野村総合研究所', match_score:0.61, match_percent:61,
+      reason:'明確なプロジェクト構造と専門性の積み上げが評価される環境が整っています。',
+      culture_tags:['専門性','コンサル','安定'] },
+  ];
+
+  return {
+    matches,
+    profile_label:  isHighAuto && isHighAchiev ? '自律×達成タイプ' : 'バランス・安定タイプ',
+    search_summary: '（デモデータ）バックエンドサーバーに接続するとClaude APIがリアルタイムでWeb検索を行い、最新の企業情報をもとに精度の高いマッチング結果を表示します。',
+  };
+}
+
+// ── メインのマッチング実行 ────────────────────────────────────
+async function loadMatching() {
+  // エラー画面をリセット
+  document.getElementById('errorScreen').style.display   = 'none';
+  document.getElementById('resultScreen').style.display  = 'none';
+  document.getElementById('loadingScreen').style.display = 'flex';
+  animateSteps();
+
+  // sessionStorageからスコアを取得
+  const raw = sessionStorage.getItem('iat_scores');
+  if (!raw) {
+    showError(
+      'IATのスコアデータが見つかりません。',
+      'iat.htmlでテストを完了してからこのページにアクセスしてください。\n\nデモ結果を表示する場合は「デモ結果を見る」ボタンを押してください。'
+    );
+    return;
+  }
+
+  const scores = JSON.parse(raw);
+
+  // プロファイルバナーだけ先に表示（体感速度向上）
+  document.getElementById('dispAutoScore').textContent   = fmtScore(scores.autonomy);
+  document.getElementById('dispAchievScore').textContent = fmtScore(scores.achievement);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/matching/search`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        autonomy_d_score:    scores.autonomy,
+        achievement_d_score: scores.achievement,
+        top_n: 5,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTPエラー: ${res.status}`);
+    }
+
+    const data = await res.json();
+    showResult(data, scores, false);
+
+  } catch (e) {
+    console.warn('マッチングAPI呼び出し失敗:', e);
+    // バックエンド未接続 → デモにフォールバック
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      const demoData = getDemoData(scores);
+      showResult(demoData, scores, true);
+    } else {
+      showError(
+        'マッチングAPIでエラーが発生しました。',
+        e.message
+      );
+    }
+  }
+}
+
+// ── デモ強制表示 ──────────────────────────────────────────────
+function loadDemo() {
+  const scores = JSON.parse(sessionStorage.getItem('iat_scores') || '{"autonomy":0.72,"achievement":0.58}');
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('errorScreen').style.display   = 'none';
+  animateSteps();
+  setTimeout(() => {
+    const demoData = getDemoData(scores);
+    showResult(demoData, scores, true);
+  }, 3500);
+}
+
+// ── ページロード時に自動実行 ──────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadMatching);
+</script>
+</body>
+</html>
